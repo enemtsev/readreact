@@ -9,14 +9,17 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    # Removed the container specification to avoid permission issues
-    # Using native runner instead of container
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Updated to v4
+      uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
     - name: Install Dependencies
       run: |
@@ -27,11 +30,6 @@ jobs:
           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
           make gcc gcc-multilib g++-multilib libsdl2-dev
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.8'
-
     - name: Install Zephyr SDK
       run: |
         wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/zephyr-sdk-0.16.0_linux-x86_64.tar.xz
@@ -39,7 +37,7 @@ jobs:
         cd zephyr-sdk-0.16.0
         ./setup.sh -h -c
 
-    - name: Install Python dependencies
+    - name: Install West and Zephyr dependencies
       run: |
         pip install west
         west init ~/zephyrproject
