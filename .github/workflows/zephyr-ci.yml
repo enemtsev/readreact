@@ -37,23 +37,29 @@ jobs:
         cd zephyr-sdk-0.16.0
         ./setup.sh -h -c
 
-    - name: Install West and Zephyr dependencies
+    - name: Set up Zephyr environment
       run: |
         pip install west
         west init ~/zephyrproject
         cd ~/zephyrproject
         west update
+        west zephyr-export
         pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
+
+    - name: List available boards
+      run: |
+        source ~/zephyrproject/zephyr/zephyr-env.sh
+        west boards
 
     - name: Build Application
       run: |
         source ~/zephyrproject/zephyr/zephyr-env.sh
         cd $GITHUB_WORKSPACE
-        west build -b native_posix_64
+        west build -b native_posix
 
     - name: Run Tests
       run: |
         source ~/zephyrproject/zephyr/zephyr-env.sh
         cd $GITHUB_WORKSPACE
-        west build -b native_posix_64 -- -DBUILD_TESTING=ON
+        west build -b native_posix -- -DBUILD_TESTING=ON
         west build -t run
