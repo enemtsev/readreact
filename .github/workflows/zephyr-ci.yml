@@ -55,11 +55,11 @@ jobs:
       run: |
         source ~/zephyrproject/zephyr/zephyr-env.sh
         cd $GITHUB_WORKSPACE
-        west build -b native_posix
+        west build -b native_sim
 
     - name: Run Tests
       run: |
         source ~/zephyrproject/zephyr/zephyr-env.sh
         cd $GITHUB_WORKSPACE
-        west build -b native_posix -- -DBUILD_TESTING=ON
+        west build -b native_sim -- -DBUILD_TESTING=ON
         west build -t run
