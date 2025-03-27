@@ -52,12 +52,23 @@ jobs:
         west build -b native_posix_64 -- -DBUILD_TESTING=ON
         west build -t run
 
-    - name: Upload Artifacts
-      if: ${{ always() }}
+    - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: build-output
+        name: zephyr-build-artifacts
         path: |
           build/zephyr/zephyr.elf
           build/zephyr/zephyr.map
+          build/CMakeCache.txt
+        if-no-files-found: warn
+        retention-days: 5
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
           build/Testing/**/Test.xml
+          build/test.log
+        if-no-files-found: warn
+        retention-days: 5
