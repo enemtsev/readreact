@@ -1,0 +1,12 @@
+/ {
+    aliases {
+        input-gpio = &gpio0;
+        output-gpio = &gpio0;
+    };
+
+    gpio0: gpio0 {
+        compatible = "zephyr,gpio-emul";
+        status = "okay";
+        ngpios = <32>;
+    };
+};
