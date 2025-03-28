@@ -68,9 +68,9 @@ jobs:
         cd build
         cmake ../ -Dgtest_disable_pthreads=ON
         make
-        cp ~/googletest-1.13.0/build/lib/* /home/runner/zephyrproject/build/zephyr
+        cp ~/googletest-1.13.0/build/lib/* /home/runner/zephyrproject/build/zephyr/
         source ~/zephyr-venv/bin/activate
         cd ~/zephyrproject
         west zephyr-export
-        west build -p always -b native_sim $GITHUB_WORKSPACE -- -DTEST_BUILD=ON -DGOOGLETEST_LIB_DIR=~/googletest-1.13.0/build/lib/
+        west build -p always -b native_sim $GITHUB_WORKSPACE -- -DTEST_BUILD=ON -DGOOGLETEST_LIB_DIR=/home/runner/googletest-1.13.0/build/lib/
         ~/zephyrproject/build/zephyr/zephyr.exe
