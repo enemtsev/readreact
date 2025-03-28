@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "gpio_mock.h"
-#include "../include/readreact/gpio_observer.hpp"
+
+#include "mocks/gpio_mock.h"
+
+#include "readreact/gpio_observer.hpp"
 
 extern GpioMock* gpioMock;
 
