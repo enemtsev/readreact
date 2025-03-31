@@ -1,6 +1,7 @@
 add_library(app_obj OBJECT
     reactclass.cpp
     readclass.cpp
+    zbusmanager.cpp
 )
 
 target_include_directories(app_obj PUBLIC ${CMAKE_SOURCE_DIR}/include)

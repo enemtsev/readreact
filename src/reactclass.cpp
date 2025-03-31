@@ -7,28 +7,9 @@
 
 LOG_MODULE_REGISTER(react);
 
-// Define ZBus channel
-ZBUS_CHAN_DEFINE(gpio_state_change_chan,
-    struct gpio_state_change,
-    NULL,
-    NULL,
-    ZBUS_OBSERVERS(),
-    {}
-);
-
 ReactClass::ReactClass(const char* output_pin) : output_pin_(output_pin) {
     instance_ = this;
     init();
-
-    // ZBus observer setup
-    // Initialize observer structure
-    observer_.callback = observer_callback;
-
-    zbus_chan_add_obs(&gpio_state_change_chan, &observer_, K_NO_WAIT);
-}
-
-ReactClass::~ReactClass() {
-    zbus_chan_rm_obs(&gpio_state_change_chan, &observer_, K_NO_WAIT);
 }
 
 void ReactClass::init() {

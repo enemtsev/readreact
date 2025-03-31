@@ -26,7 +26,6 @@
     
         struct k_work_delayable blink_work_;
         const char* output_pin_;
-        struct zbus_observer observer_;
         inline static bool last_state_ = false;
         uint8_t blink_count_ = 0;
 
