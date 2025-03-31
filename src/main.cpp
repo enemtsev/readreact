@@ -3,6 +3,7 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "readreact/readclass.h"
+#include "readreact/reactled.h"
 #include "readreact/reactclass.h"
 #include "readreact/zbusmanager.h"
 
@@ -24,8 +25,11 @@ int main(void)
     ZBusManager manager;
     zbusmanager_ptr = &manager;
 
-    ReadClass reader("input-gpio");
-    ReactClass reactor("output-gpio");
+    // ReadClass reader("input-gpio");
+    ReactLED react_led;
+    ReactClass reactor(&react_led);
+
+    manager.register_subscriber(&reactor);
 
     while (1) {
         k_sleep(K_MSEC(1000));

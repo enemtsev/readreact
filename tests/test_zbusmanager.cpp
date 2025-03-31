@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "readreact/zbusmanager.h" // Assuming the class is in this header file
-#include "mocks/zbusmocks.h"
+#include "mocks/zbus_mocks.h"
 
 using ::testing::Mock;
 using ::testing::Invoke;

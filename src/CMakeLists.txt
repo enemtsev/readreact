@@ -1,4 +1,5 @@
 add_library(app_obj OBJECT
+    reactled.cpp
     reactclass.cpp
     readclass.cpp
     zbusmanager.cpp

@@ -1,5 +1,4 @@
 #include "readreact/reactclass.h"
-#include "readreact/gpio_observer.hpp"
 
 #include <zephyr/kernel.h>
 #include <zephyr/zbus/zbus.h>
@@ -7,64 +6,41 @@
 
 LOG_MODULE_REGISTER(react);
 
-ReactClass::ReactClass(const char* output_pin) : output_pin_(output_pin) {
-    instance_ = this;
-    init();
+
+ReactClass::ReactClass(ReactLED *react_led) : react_led_(react_led) {
+    init(); // Initialize the GPIO and work structures.
 }
 
+// Initialize the GPIO, work structures, and setup the observer
 void ReactClass::init() {
-    const device *gpio_dev = device_get_binding("GPIO_1");
-    if (!device_is_ready(gpio_dev)) {
-        LOG_ERR("Output GPIO device not ready");
-        return;
-    }
-
-    int ret = gpio_pin_configure(gpio_dev, 0, GPIO_OUTPUT);
-    if (ret < 0) {
-        LOG_ERR("Failed to configure output GPIO: %d", ret);
-        return;
-    }
-
-    k_work_init_delayable(&blink_work_, blink_work_callback);
-    LOG_INF("ReactClass initialized for pin %s", output_pin_);
+    work_context_.react_ = this;
+    k_work_init_delayable(&work_context_.blink_work_, blink_work_callback);
+    LOG_INF("ReactClass initialized for output");
 }
 
-void ReactClass::observer_callback(const struct zbus_channel *chan) {
-    struct gpio_state_change msg;
-    zbus_chan_read(chan, &msg, K_NO_WAIT);
-    instance_->handle_gpio_change(msg.state);
+// This method overrides the handle_message() from BaseSubscriber
+void ReactClass::handle_message(const struct ZBusMessage& msg) {
+    last_state_ = msg.state;
+    k_work_schedule(&work_context_.blink_work_, K_NO_WAIT);
 }
 
-void ReactClass::handle_gpio_change(bool state) {
-    const device *gpio_dev = device_get_binding("GPIO_1");
-    
-    if (state) {
-        // High state - blink 3 times
-        blink_count_ = 0;
-        k_work_schedule(&blink_work_, K_MSEC(100));
-    } else {
-        // Low state - turn on for 500ms
-        gpio_pin_set(gpio_dev, 0, 1);
-        k_work_schedule(&blink_work_, K_MSEC(500));
-    }
-}
-
+// This function is called by the work manager for blinking the LED.
 void ReactClass::blink_work_callback(struct k_work *work) {
-    ReactClass* instance = CONTAINER_OF(work, ReactClass, blink_work_);
-    const device *gpio_dev = device_get_binding("GPIO_1");
+    k_work_delayable *dwork = k_work_delayable_from_work(work);
+    WorkContext *ctx = CONTAINER_OF(dwork, WorkContext, blink_work_);
 
-    if (instance->last_state_) {
-        // Handle blinking for high state
-        instance->blink_count_++;
-        if (instance->blink_count_ <= 6) { // 3 on/off cycles
-            bool led_state = (instance->blink_count_ % 2) == 1;
-            gpio_pin_set(gpio_dev, 0, led_state);
-            if (instance->blink_count_ < 6) {
-                k_work_schedule(&instance->blink_work_, K_MSEC(100));
-            }
+    if (ctx->react_->last_state_) {  // If state is HIGH
+        // Blink the LED 3 times with 100ms delay
+        for (int i = 0; i < 3; ++i) {
+            ctx->react_->react_led_->turn_on();
+            k_sleep(K_MSEC(100));
+            ctx->react_->react_led_->turn_off();
+            k_sleep(K_MSEC(100));
         }
-    } else {
-        // Handle 500ms on for low state
-        gpio_pin_set(gpio_dev, 0, 0);
+    } else {  // If state is LOW
+        // Keep the LED on for 500ms
+        ctx->react_->react_led_->turn_on();
+        k_sleep(K_MSEC(500));
+        ctx->react_->react_led_->turn_off();
     }
 }

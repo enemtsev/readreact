@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 #include <functional>
 #include <zephyr/zbus/zbus.h>
 
@@ -49,7 +48,7 @@ public:
 // ZBusManager to handle channel registration and message dispatch
 class ZBusManager {
 public:
-    explicit ZBusManager();
+     ZBusManager() = default;
     ~ZBusManager();
 
     void register_publisher(BasePublisher* publisher);
@@ -61,8 +60,7 @@ public:
     static void channel_callback(const struct zbus_channel *chan);
 
 private:
-    std::vector<BaseSubscriber*> subscribers_;
     const struct zbus_channel *channel_{nullptr};
+    std::vector<BaseSubscriber*> subscribers_;
     std::vector<BasePublisher*> publishers_;
-    struct zbus_observer observer_;
 };

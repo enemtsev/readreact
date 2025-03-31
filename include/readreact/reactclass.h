@@ -1,33 +1,53 @@
 #pragma once
 
-#include <zephyr/drivers/gpio.h>
+#include <functional>
 #include <zephyr/kernel.h>
 #include <zephyr/zbus/zbus.h>
 
+#include "readreact/zbusmanager.h"
+#include "readreact/reactled.h"
+
+
 /**
  * @class ReactClass
- * @brief Observes GPIO state changes and controls output GPIO accordingly
+ * @brief Observes GPIO state changes and controls output GPIO accordingly.
  */
- class ReactClass {
-    public:
-        /**
-         * @brief Construct a new ReactClass object
-         * @param output_pin Device tree label for output GPIO
-         */
-        ReactClass(const char* output_pin);
-    
-        ~ReactClass();
-    
-    private:
-        void init();    
-        static void observer_callback(const struct zbus_channel *chan);    
-        void handle_gpio_change(bool state);    
-        static void blink_work_callback(struct k_work *work);
-    
-        struct k_work_delayable blink_work_;
-        const char* output_pin_;
-        inline static bool last_state_ = false;
-        uint8_t blink_count_ = 0;
+ class ReactClass : public BaseSubscriber {
+public:
+    /**
+    * @brief Construct a new ReactClass object
+    *
+    */
+    ReactClass(ReactLED *react_led);
 
-        inline static ReactClass* instance_{nullptr};
+    /**
+    * @brief Handle state change of the GPIO.
+    *
+    * @param state The new state of the GPIO (high/low).
+    */
+    void handle_message(const struct ZBusMessage& msg) override;
+    
+private:
+    ReactLED *react_led_{nullptr};
+
+    // Define the work context structure
+    struct WorkContext {
+        struct k_work_delayable blink_work_;
+        ReactClass *react_;
     };
+
+    /**
+    * @brief Initializes the class, sets up observers.
+    */
+    void init();
+
+    /**
+    * @brief Work callback for blinking LED when GPIO state is HIGH.
+    *
+    * @param work The work item for delayed execution.
+    */
+    static void blink_work_callback(struct k_work *work);
+    bool last_state_;             /**< Last known GPIO state */
+
+    WorkContext work_context_;           /**< work context */
+};

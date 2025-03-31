@@ -5,7 +5,7 @@ target_sources(app PRIVATE
     test_main.cpp
     test_zbusmanager.cpp
     # test_readclass.cpp 
-    # test_reactclass.cpp
+    test_reactclass.cpp
     # mocks/gpio_mock.cpp
 )
 

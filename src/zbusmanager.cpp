@@ -18,12 +18,8 @@ void ZBusManager::channel_callback(const struct zbus_channel *chan) {
     }
 }
 
-ZBusManager::ZBusManager() {
-    observer_.callback = channel_callback;
-}
-
 ZBusManager::~ZBusManager() {
-    zbus_chan_rm_obs(channel_, &observer_, K_NO_WAIT);
+    zbus_chan_rm_obs(channel_, &zbusmanager_observer, K_NO_WAIT);
 }
 
 void ZBusManager::register_publisher(BasePublisher* publisher) {
