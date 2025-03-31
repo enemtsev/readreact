@@ -57,7 +57,7 @@ jobs:
         source ~/zephyr-venv/bin/activate
         cd ~/zephyrproject
         west zephyr-export
-        west build -b native_sim $GITHUB_WORKSPACE
+        west build -b native_sim/native/64 $GITHUB_WORKSPACE
 
     - name: Run Tests
       run: |
