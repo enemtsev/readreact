@@ -15,18 +15,17 @@ ReactLED::ReactLED() : gpio_dev{DEVICE_DT_GET(DEV_OUT)} {
         return;
     }
 
-    int ret = gpio_pin_configure(gpio_dev, 0, GPIO_OUTPUT);
+    int ret = gpio_pin_configure(gpio_dev, PIN_OUT, GPIO_OUTPUT_LOW | PIN_OUT_FLAGS);
     if (ret < 0) {
         LOG_ERR("Failed to configure output GPIO: %d", ret);
         return;
     }
-
 }
 
 void ReactLED::turn_on() { 
     LOG_INF("LED on");
     if (gpio_dev != nullptr) {
-        gpio_pin_set(gpio_dev, 1, 1); 
+        gpio_pin_set(gpio_dev, PIN_OUT, 1);
     } else {
         LOG_ERR("LED device error");
     }
@@ -35,7 +34,7 @@ void ReactLED::turn_on() {
 void ReactLED::turn_off() {
     LOG_INF("LED off");
     if (gpio_dev != nullptr) {
-        gpio_pin_set(gpio_dev, 1, 0); 
+        gpio_pin_set(gpio_dev, PIN_OUT, 0);
     } else {
         LOG_ERR("LED device error");
     }
