@@ -12,15 +12,5 @@ target_sources(app PRIVATE
 message(STATUS "GOOGLETEST_LIB_DIR: ${GOOGLETEST_LIB_DIR}")
 
 target_link_directories(app PRIVATE ${GOOGLETEST_LIB_DIR})
-
-target_include_directories(app PRIVATE /usr/include/c++/13/)
-target_include_directories(app PRIVATE /usr/include/x86_64-linux-gnu/c++/13)
-
 target_include_directories(app PUBLIC ${CMAKE_SOURCE_DIR}/include)
-# Link test executable to test framework and app logic
-
-target_link_libraries(app PRIVATE app_obj gtest gmock stdc++ )
-    # ${GOOGLETEST_LIB_DIR}/libgtest.a 
-    # ${GOOGLETEST_LIB_DIR}/libgtest_main.a 
-    # ${GOOGLETEST_LIB_DIR}/libgmock.a 
-    # ${GOOGLETEST_LIB_DIR}/libgmock_main.a app_obj stdc++)
+target_link_libraries(app PRIVATE app_obj gtest gmock)
