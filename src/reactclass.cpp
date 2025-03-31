@@ -1,14 +1,14 @@
 #include "readreact/reactclass.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/zbus/zbus.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/zbus/zbus.h>
 
 LOG_MODULE_REGISTER(react);
 
-
-ReactClass::ReactClass(ReactLED *react_led) : react_led_(react_led) {
-    init(); // Initialize the GPIO and work structures.
+ReactClass::ReactClass(ReactLED *react_led)
+    : react_led_(react_led) {
+    init();  // Initialize the GPIO and work structures.
 }
 
 // Initialize the GPIO, work structures, and setup the observer
@@ -19,7 +19,7 @@ void ReactClass::init() {
 }
 
 // This method overrides the handle_message() from BaseSubscriber
-void ReactClass::handle_message(const struct ZBusMessage& msg) {
+void ReactClass::handle_message(const struct ZBusMessage &msg) {
     last_state_ = msg.state;
     k_work_schedule(&work_context_.blink_work_, K_NO_WAIT);
 }

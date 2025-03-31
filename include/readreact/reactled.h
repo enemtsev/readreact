@@ -6,11 +6,11 @@
  * @class ReactLED
  * @brief Base class for controlling an ReactLED.
  */
- class ReactLED {
+class ReactLED {
 public:
     ReactLED();
     virtual ~ReactLED() = default;
-    
+
     virtual void turn_on();
     virtual void turn_off();
 

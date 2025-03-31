@@ -2,8 +2,8 @@
 
 #include "readreact/reactled.h"
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 class MockReactLED : public ReactLED {
 public:
@@ -12,18 +12,17 @@ public:
 };
 
 class MockReactLEDGPIO : public ReactLED {
-    public:
-        int on_count{0};
-        int off_count{0};
+public:
+    int on_count{0};
+    int off_count{0};
 
+    void turn_on() override {
+        on_count++;
+        ReactLED::turn_on();
+    }
 
-        void turn_on() override {
-            on_count++;
-            ReactLED::turn_on();
-        }
-
-        void turn_off() override {
-            off_count++;
-            ReactLED::turn_off();
-        }
+    void turn_off() override {
+        off_count++;
+        ReactLED::turn_off();
+    }
 };

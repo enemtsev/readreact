@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "mocks/reactled_mock.h"
 #include "readreact/reactclass.h"
@@ -12,15 +12,14 @@
 int on_count{0};
 int off_count{0};
 
-void gpio_callback_func(const struct device *dev_in, struct gpio_callback *gpio_cb,
-    uint32_t pins) {
+void gpio_callback_func(const struct device *dev_in, struct gpio_callback *gpio_cb, uint32_t pins) {
     // if (pins & PIN_OUT) {
-        int state = gpio_pin_get(dev_in, PIN_OUT);
-        if (state) {
-            on_count++;
-        } else {
-            off_count++;
-        }
+    int state = gpio_pin_get(dev_in, PIN_OUT);
+    if (state) {
+        on_count++;
+    } else {
+        off_count++;
+    }
     // }
 }
 

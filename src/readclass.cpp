@@ -5,7 +5,8 @@
 
 LOG_MODULE_REGISTER(read);
 
-ReadClass::ReadClass(const char* input_pin) : input_pin_(input_pin) {
+ReadClass::ReadClass(const char *input_pin)
+    : input_pin_(input_pin) {
     init();
 }
 
@@ -18,16 +19,14 @@ void ReadClass::init() {
     }
 
     // Configure input pin
-    int ret = gpio_pin_configure(gpio_dev, 0, 
-                GPIO_INPUT | GPIO_PULL_UP);
+    int ret = gpio_pin_configure(gpio_dev, 0, GPIO_INPUT | GPIO_PULL_UP);
     if (ret < 0) {
         LOG_ERR("Failed to configure input GPIO: %d", ret);
         return;
     }
 
     // Configure interrupt
-    ret = gpio_pin_interrupt_configure(gpio_dev, 0,
-                GPIO_INT_EDGE_BOTH);
+    ret = gpio_pin_interrupt_configure(gpio_dev, 0, GPIO_INT_EDGE_BOTH);
     if (ret < 0) {
         LOG_ERR("Failed to configure interrupt: %d", ret);
         return;

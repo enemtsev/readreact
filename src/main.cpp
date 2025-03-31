@@ -2,9 +2,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/zbus/zbus.h>
 
-#include "readreact/readclass.h"
-#include "readreact/reactled.h"
 #include "readreact/reactclass.h"
+#include "readreact/reactled.h"
+#include "readreact/readclass.h"
 #include "readreact/zbusmanager.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
@@ -12,16 +12,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 ZBusManager *zbusmanager_ptr;
 
 // Define ZBus channel
-ZBUS_CHAN_DEFINE(gpio_state_change_chan,
-    struct ZBusMessage,
-    NULL,
-    &zbusmanager_ptr,
-    ZBUS_OBSERVERS(),
-    {}
-);
+ZBUS_CHAN_DEFINE(gpio_state_change_chan, struct ZBusMessage, NULL, &zbusmanager_ptr, ZBUS_OBSERVERS(), {});
 
-int main(void)
-{
+int main(void) {
     ZBusManager manager;
     zbusmanager_ptr = &manager;
 

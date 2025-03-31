@@ -9,7 +9,8 @@ LOG_MODULE_REGISTER(reactled);
 #define PIN_OUT DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), out_gpios)
 #define PIN_OUT_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), out_gpios)
 
-ReactLED::ReactLED() : gpio_dev{DEVICE_DT_GET(DEV_OUT)} {
+ReactLED::ReactLED()
+    : gpio_dev{DEVICE_DT_GET(DEV_OUT)} {
     if (!device_is_ready(gpio_dev)) {
         LOG_ERR("Output GPIO device not ready");
         return;
@@ -22,7 +23,7 @@ ReactLED::ReactLED() : gpio_dev{DEVICE_DT_GET(DEV_OUT)} {
     }
 }
 
-void ReactLED::turn_on() { 
+void ReactLED::turn_on() {
     LOG_INF("LED on");
     if (gpio_dev != nullptr) {
         gpio_pin_set(gpio_dev, PIN_OUT, 1);

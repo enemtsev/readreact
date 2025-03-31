@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <zephyr/kernel.h>
 #include <nsi_main.h>
+#include <zephyr/kernel.h>
 
 int main(void) {
     int argc = 1;
