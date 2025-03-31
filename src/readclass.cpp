@@ -1,66 +1,66 @@
 #include "readreact/readclass.h"
-#include "readreact/gpio_observer.hpp"
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(read);
+LOG_MODULE_REGISTER(read, LOG_LEVEL_DBG);
 
-ReadClass::ReadClass(const char *input_pin)
-    : input_pin_(input_pin) {
+#define DEV_IN DT_GPIO_CTLR(DT_INST(0, test_gpio_basic_api), in_gpios)
+#define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
+#define PIN_IN_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), in_gpios)
+
+ReadClass::ReadClass() {
     init();
 }
 
 void ReadClass::init() {
-    // Get GPIO device using device-tree compatible
-    const device *gpio_dev = device_get_binding("GPIO_0");
+    callback_context_.read_ = this;
+    work_context_.read_ = this;
+
+    const device *gpio_dev = DEVICE_DT_GET(DEV_IN);
+
     if (!device_is_ready(gpio_dev)) {
         LOG_ERR("Input GPIO device not ready");
         return;
     }
 
-    // Configure input pin
-    int ret = gpio_pin_configure(gpio_dev, 0, GPIO_INPUT | GPIO_PULL_UP);
+    int ret = gpio_pin_configure(gpio_dev, PIN_IN, GPIO_INPUT | GPIO_PULL_UP);
     if (ret < 0) {
         LOG_ERR("Failed to configure input GPIO: %d", ret);
         return;
     }
 
-    // Configure interrupt
-    ret = gpio_pin_interrupt_configure(gpio_dev, 0, GPIO_INT_EDGE_BOTH);
+    ret = gpio_pin_interrupt_configure(gpio_dev, PIN_IN, GPIO_INT_EDGE_BOTH);
     if (ret < 0) {
         LOG_ERR("Failed to configure interrupt: %d", ret);
         return;
     }
 
-    // Initialize work queue
-    k_work_init(&work_, work_callback);
+    k_work_init(&work_context_.work_, work_callback);
+    gpio_init_callback(&callback_context_.callback_, interrupt_callback, BIT(PIN_IN));
 
-    // Setup interrupt callback
-    gpio_init_callback(&callback_, interrupt_callback, BIT(0));
-    ret = gpio_add_callback(gpio_dev, &callback_);
+    ret = gpio_add_callback(gpio_dev, &callback_context_.callback_);
     if (ret < 0) {
         LOG_ERR("Failed to add callback: %d", ret);
         return;
     }
 
-    LOG_INF("ReadClass initialized for pin %s", input_pin_);
+    LOG_INF("ReadClass initialized for input pin");
 }
 
 void ReadClass::interrupt_callback(const device *dev, gpio_callback *cb, uint32_t pins) {
-    ReadClass *self = CONTAINER_OF(cb, ReadClass, callback_);
-    k_work_submit(&self->work_);
+    CallbackContext *ctx = CONTAINER_OF(cb, CallbackContext, callback_);
+    ctx->read_->work_context_.dev = dev;
+    k_work_submit(&ctx->read_->work_context_.work_);
 }
 
 void ReadClass::work_callback(struct k_work *work) {
-    ReadClass *self = CONTAINER_OF(work, ReadClass, work_);
-    self->process_gpio_change();
+    WorkContext *ctx = CONTAINER_OF(work, WorkContext, work_);
+    ctx->read_->process_gpio_change(ctx->dev);
 }
 
-void ReadClass::process_gpio_change() {
-    const device *gpio_dev = device_get_binding("GPIO_0");
-    int state = gpio_pin_get(gpio_dev, 0);
+void ReadClass::process_gpio_change(const device *dev) {
+    int state = gpio_pin_get(dev, PIN_IN);
 
-    // Debounce logic
     if (k_uptime_get() - last_change_time_ < DEBOUNCE_TIME_MS) {
         return;
     }
@@ -69,8 +69,9 @@ void ReadClass::process_gpio_change() {
         last_state_ = state;
         last_change_time_ = k_uptime_get();
 
-        struct gpio_state_change msg = {.state = (bool)state};
-        zbus_chan_pub(&gpio_state_change_chan, &msg, K_NO_WAIT);
+        ZBusMessage msg = {static_cast<bool>(state)};
+        // publish(msg);  // Use BasePublisher's publish function
+
         LOG_INF("GPIO state changed to %s", state ? "HIGH" : "LOW");
     }
 }
