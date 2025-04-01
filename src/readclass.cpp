@@ -23,13 +23,13 @@ void ReadClass::init() {
         return;
     }
 
-    int ret = gpio_pin_configure(gpio_dev, PIN_IN, GPIO_INPUT | GPIO_PULL_UP);
+    int ret = gpio_pin_configure(gpio_dev, PIN_IN, PIN_IN_FLAGS);
     if (ret < 0) {
         LOG_ERR("Failed to configure input GPIO: %d", ret);
         return;
     }
 
-    ret = gpio_pin_interrupt_configure(gpio_dev, PIN_IN, GPIO_INT_EDGE_BOTH);
+    ret = gpio_pin_interrupt_configure(gpio_dev, PIN_IN, GPIO_INT_EDGE_TO_ACTIVE);
     if (ret < 0) {
         LOG_ERR("Failed to configure interrupt: %d", ret);
         return;
@@ -59,6 +59,7 @@ void ReadClass::work_callback(struct k_work *work) {
 }
 
 void ReadClass::process_gpio_change(const device *dev) {
+    LOG_DBG("process_gpio_change");
     int state = gpio_pin_get(dev, PIN_IN);
 
     if (k_uptime_get() - last_change_time_ < DEBOUNCE_TIME_MS) {
@@ -70,7 +71,7 @@ void ReadClass::process_gpio_change(const device *dev) {
         last_change_time_ = k_uptime_get();
 
         ZBusMessage msg = {static_cast<bool>(state)};
-        // publish(msg);  // Use BasePublisher's publish function
+        publish(msg);  // Use BasePublisher's publish function
 
         LOG_INF("GPIO state changed to %s", state ? "HIGH" : "LOW");
     }

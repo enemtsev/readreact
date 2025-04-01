@@ -5,10 +5,15 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+
 class MockReactLED : public ReactLED {
 public:
     MOCK_METHOD(void, turn_on, (), (override));
     MOCK_METHOD(void, turn_off, (), (override));
+
+    bool init() override {
+        return true;
+    }
 };
 
 class MockReactLEDGPIO : public ReactLED {
@@ -16,13 +21,7 @@ public:
     int on_count{0};
     int off_count{0};
 
-    void turn_on() override {
-        on_count++;
-        ReactLED::turn_on();
-    }
-
-    void turn_off() override {
-        off_count++;
-        ReactLED::turn_off();
-    }
+    bool init() override;
+    void turn_on() override;
+    void turn_off() override;
 };

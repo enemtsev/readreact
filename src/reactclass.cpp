@@ -13,6 +13,7 @@ ReactClass::ReactClass(ReactLED *react_led)
 
 // Initialize the GPIO, work structures, and setup the observer
 void ReactClass::init() {
+    react_led_->init();
     work_context_.react_ = this;
     k_work_init_delayable(&work_context_.blink_work_, blink_work_callback);
     LOG_INF("ReactClass initialized for output");

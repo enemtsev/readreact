@@ -17,6 +17,8 @@ public:
      */
     explicit ReadClass();
 
+    static constexpr uint32_t DEBOUNCE_TIME_MS = 50;
+
 private:
     struct CallbackContext {
         struct gpio_callback callback_;
@@ -35,8 +37,6 @@ private:
     static void work_callback(struct k_work *work);
 
     void process_gpio_change(const device *dev);
-
-    static constexpr uint32_t DEBOUNCE_TIME_MS = 50;
 
     CallbackContext callback_context_;
     WorkContext work_context_;

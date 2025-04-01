@@ -22,6 +22,7 @@ ZBUS_CHAN_DEFINE(gpio_state_change_chan, struct ZBusMessage, NULL, &zbusmanager_
 int main(void) {
     ZBusManager manager;
     zbusmanager_ptr = &manager;
+    manager.set_channel(&gpio_state_change_chan);
 
     // ReadClass reader("input-gpio");
     ReactLED react_led;
@@ -32,11 +33,14 @@ int main(void) {
     manager.register_publisher(&reader);
     manager.register_subscriber(&reactor);
 
+    const device *gpio_dev = DEVICE_DT_GET(DEV_IN);
     while (1) {
         k_sleep(K_MSEC(1000));
-        const device *gpio_dev = DEVICE_DT_GET(DEV_IN);
 
-        gpio_pin_toggle(gpio_dev, PIN_IN);
+        gpio_pin_set(gpio_dev, PIN_IN, 1);
+
+        int state = gpio_pin_get(gpio_dev, PIN_IN);
+        LOG_INF("state %d", state);
     }
 
     return 0;

@@ -8,12 +8,14 @@
  */
 class ReactLED {
 public:
-    ReactLED();
+    ReactLED() = default;
     virtual ~ReactLED() = default;
 
+    virtual bool init();
     virtual void turn_on();
     virtual void turn_off();
 
-private:
-    const struct device *gpio_dev;
+protected:
+    const struct device *gpio_dev_;
+    int pin_{0};
 };

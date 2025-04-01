@@ -5,22 +5,21 @@
 #include "readreact/reactclass.h"
 #include "zephyr/drivers/gpio.h"
 
-#define DEV_OUT DT_GPIO_CTLR(DT_INST(0, test_gpio_basic_api), out_gpios)
-#define PIN_OUT DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), out_gpios)
-#define PIN_OUT_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), out_gpios)
+#include <zephyr/drivers/gpio/gpio_emul.h>
+
+#define GPIO_EMUL_NODE DT_NODELABEL(gpio_emul)
+#define EMUL_PIN_OUT 0
 
 int on_count{0};
 int off_count{0};
 
 void gpio_callback_func(const struct device *dev_in, struct gpio_callback *gpio_cb, uint32_t pins) {
-    // if (pins & PIN_OUT) {
-    int state = gpio_pin_get(dev_in, PIN_OUT);
+    int state = gpio_emul_output_get(dev_in, EMUL_PIN_OUT);
     if (state) {
         on_count++;
     } else {
         off_count++;
     }
-    // }
 }
 
 TEST(ReactClassTest, BlinksThreeTimesOnHigh) {
@@ -50,18 +49,18 @@ TEST(ReactClassTest, BlinksThreeTimesOnHighGPIO) {
     MockReactLEDGPIO led;
     ReactClass react(&led);
 
-    const struct device *gpio_dev = DEVICE_DT_GET(DEV_OUT);
+    const struct device *gpio_dev = DEVICE_DT_GET(GPIO_EMUL_NODE);
     gpio_callback callback;
-    gpio_pin_interrupt_configure(gpio_dev, PIN_OUT, GPIO_INT_EDGE_BOTH);
-    gpio_init_callback(&callback, gpio_callback_func, BIT(PIN_OUT));
+    gpio_pin_interrupt_configure(gpio_dev, EMUL_PIN_OUT, GPIO_INT_EDGE_BOTH);
+    gpio_init_callback(&callback, gpio_callback_func, BIT(EMUL_PIN_OUT));
     gpio_add_callback(gpio_dev, &callback);
 
     react.handle_message({true});
 
     k_sleep(K_MSEC(1000));
 
-    // EXPECT_EQ(on_count, 3);
-    EXPECT_EQ(off_count, 6);
+    EXPECT_EQ(on_count, 3);
+    EXPECT_EQ(off_count, 3);
 
     EXPECT_EQ(led.on_count, 3);
     EXPECT_EQ(led.off_count, 3);
@@ -76,18 +75,18 @@ TEST(ReactClassTest, TurnsOnOnceOnLowGPIO) {
     MockReactLEDGPIO led;
     ReactClass react(&led);
 
-    const struct device *gpio_dev = DEVICE_DT_GET(DEV_OUT);
+    const struct device *gpio_dev = DEVICE_DT_GET(GPIO_EMUL_NODE);
     gpio_callback callback;
-    gpio_pin_interrupt_configure(gpio_dev, PIN_OUT, GPIO_INT_EDGE_BOTH);
-    gpio_init_callback(&callback, gpio_callback_func, BIT(PIN_OUT));
+    gpio_pin_interrupt_configure(gpio_dev, EMUL_PIN_OUT, GPIO_INT_EDGE_BOTH);
+    gpio_init_callback(&callback, gpio_callback_func, BIT(EMUL_PIN_OUT));
     gpio_add_callback(gpio_dev, &callback);
 
     react.handle_message({false});
 
     k_sleep(K_MSEC(1000));
 
-    // EXPECT_EQ(on_count, 1);
-    EXPECT_EQ(off_count, 2);
+    EXPECT_EQ(on_count, 1);
+    EXPECT_EQ(off_count, 1);
 
     EXPECT_EQ(led.on_count, 1);
     EXPECT_EQ(led.off_count, 1);
