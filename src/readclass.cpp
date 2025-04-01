@@ -1,15 +1,12 @@
 #include "readreact/readclass.h"
+#include "readreact/gpio_device.h"
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys_clock.h>
-#include "gmock/gmock.h"
-#include "zephyr/drivers/gpio.h"
+#include <gmock/gmock.h>
+#include <zephyr/drivers/gpio.h>
 
 LOG_MODULE_REGISTER(read, LOG_LEVEL_DBG);
-
-#define DEV_IN DT_GPIO_CTLR(DT_INST(0, test_gpio_basic_api), in_gpios)
-#define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
-#define PIN_IN_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), in_gpios)
 
 ReadClass::ReadClass() {
     callback_context_.read_ = this;
@@ -53,9 +50,9 @@ bool ReadClass::init_gpio_device() {
 }
 
 bool ReadClass::init() {
-    gpio_dev_ = DEVICE_DT_GET(DEV_IN);
+    gpio_dev_ = DEVICE_DT_GET(DEV_GPIO);
     pin_ = PIN_IN;
-    flags_ = PIN_IN_FLAGS;
+    flags_ = DEV_IN_CONFIG;
 
     bool ret = init_gpio_device();
 
@@ -78,7 +75,7 @@ void ReadClass::work_callback(struct k_work *work) {
 void ReadClass::process_gpio_change() {
     int state = gpio_pin_get(gpio_dev_, pin_);
     int64_t time = k_uptime_get() - last_change_time_;
-    LOG_INF("process_gpio_change state: %d %d", state, time);
+    LOG_DBG("process_gpio_change state: %d %d", state, time);
     
     if (time > DEBOUNCE_TIME_MS && state != last_state_) {
         last_state_ = state;
