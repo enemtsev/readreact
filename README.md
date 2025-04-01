@@ -2,39 +2,123 @@
 
 [![CI](https://github.com/enemtsev/readreact/actions/workflows/zephyr-ci.yml/badge.svg)](https://github.com/enemtsev/readreact/actions/workflows/zephyr-ci.yml)
 
-A Zephyr RTOS application demonstrating GPIO input/output handling with ZBus message passing between components.
+A Zephyr RTOS application demonstrating GPIO input/output handling with ZBus message passing between components. The project implements a decoupled, event-driven architecture that follows best practices for embedded software development.
 
 ## Overview
 
 ReadReact is a decoupled, event-driven system that leverages Zephyr's ZBus messaging framework to create a maintainable and testable architecture for embedded GPIO applications. It implements a clean separation between input detection (ReadClass) and output actuation (ReactClass).
 
+## Architecture
+
+The system follows a publisher-subscriber pattern with the following key components:
+
+```
+┌─────────────┐    ZBus Message    ┌─────────────┐
+│  ReadClass  │───────────────────▶│ ReactClass  │
+└─────────────┘    (GPIO State)    └─────────────┘
+      │                                   │
+      ▼                                   ▼
+┌─────────────┐                   ┌─────────────┐
+│  GPIO Input │                   │ GPIO Output │
+│  (Button)   │                   │    (LED)    │
+└─────────────┘                   └─────────────┘
+```
+
+### Component Responsibilities
+
+#### ReadClass
+- Initializes and configures GPIO input pin with pull-up
+- Sets up interrupt handling for state changes
+- Implements debouncing (50ms) to filter out noise and bounce
+- Publishes reliable state changes to ZBus channel
+- Uses k_work_delayable to process changes outside ISR context
+
+#### ReactClass
+- Subscribes to GPIO state changes through ZBus
+- Controls LED output based on received state:
+  - HIGH state: Blinks LED 3 times with 100ms intervals
+  - LOW state: Turns LED on for 500ms, then off
+- Uses k_work_delayable for timing-based output patterns
+- Avoids blocking the observer callback
+
+#### ZBusManager
+- Centralizes ZBus channel management
+- Handles publisher and subscriber registration
+- Routes messages between components
+- Abstracts Zephyr ZBus API for cleaner component code
+
+#### ReactLED
+- Provides hardware abstraction for LED control
+- Simplifies testing through mockable interface
+- Encapsulates GPIO output configuration
+
 ## Features
 
-- **ReadClass**: Monitors GPIO input with debouncing and publishes state changes via ZBus
-- **ReactClass**: Listens for state changes and controls GPIO output (LED) accordingly
-- **ZBusManager**: Handles messaging between components using Zephyr's ZBus framework
-- **Hardware Abstraction**: Decoupled architecture through mock interfaces for easier testing
-- **Comprehensive Tests**: Unit tests using GTest and GMock
-- **CI Integration**: GitHub Actions workflow for automated builds and tests
+- **Event-Driven Architecture**: Clean separation of concerns through ZBus messaging
+- **Hardware Abstraction**: Abstract interfaces allow for easy mocking and testing
+- **Interrupt-Based Input**: Efficient GPIO monitoring with interrupt callbacks
+- **Debounce Logic**: Reliable input with software debouncing
+- **Non-Blocking Design**: Work queues prevent blocking in interrupt handlers
+- **Comprehensive Documentation**: Doxygen-style documentation throughout codebase
+- **Extensive Testing**: Unit tests using GTest and GMock frameworks
+- **CI/CD Integration**: Automated testing with GitHub Actions
 
 ## Prerequisites
 
 - Zephyr SDK (v3.4+ recommended)
-- West tool
+- West tool (Zephyr's meta-tool)
 - Python 3.8+
 - C++20 capable compiler
 - Development board or `native_sim` for host simulation
 
+## Building and Running
+
+### Setup Zephyr Environment
+
+```bash
+# Initialize Zephyr workspace
+west init ~/zephyrproject
+cd ~/zephyrproject
+west update
+
+# Install required Python packages
+pip install -r zephyr/scripts/requirements.txt
+```
+
+### Build for Native Simulation
+
+```bash
+# Clone the repository
+git clone https://github.com/enemtsev/readreact.git
+cd readreact
+
+# Build for native_sim (host machine)
+west build -b native_sim_64
+
+# Run the application
+west build -t run
+```
+
+### Build for Hardware
+
+```bash
+# Build for your development board (replace 'your_board' with your board name)
+west build -b your_board
+
+# Flash to device
+west flash
+```
+
 ## Hardware Configuration
 
-For real hardware, update the device tree overlay (`boards/<your_board>.overlay`):
+For physical hardware, create or update a device tree overlay for your board in `boards/<board_name>.overlay`:
 
 ```dts
 / {
     resources {
         compatible = "test-gpio-basic-api";
-        out-gpios = <&gpio0 0 0>; /* Pin 0 */
-        in-gpios = <&gpio0 1 0>; /* Pin 1 */
+        out-gpios = <&gpio0 0 0>; /* LED pin */
+        in-gpios = <&gpio0 1 0>;  /* Button pin */
     };
 };
 
@@ -43,131 +127,57 @@ For real hardware, update the device tree overlay (`boards/<your_board>.overlay`
 };
 ```
 
-## Getting Started
+Then update the `readreact/gpio_device.h` file to use the real hardware definitions instead of emulation.
 
-1. Set up the Zephyr environment:
+## Testing
 
-```bash
-west init ~/zephyrproject
-cd ~/zephyrproject
-west update
-pip install -r zephyr/scripts/requirements.txt
-```
-
-2. Clone this repository:
+The project includes a comprehensive test suite using GTest and GMock frameworks:
 
 ```bash
-git clone https://github.com/enemtsev/readreact.git
-cd readreact
-```
+# Build with testing enabled
+west build -b native_sim_64 -- -DTEST_BUILD=ON
 
-3. Build for your target board (or native_sim):
-
-```bash
-west build -b native_sim
-```
-
-4. Run the application:
-
-```bash
+# Run tests
 west build -t run
-# OR for a physical board
-west flash
 ```
+
+Test coverage includes:
+- ZBusManager message routing
+- ReactClass LED pattern generation
+- ReadClass debounce and state detection
+- Mock hardware interfaces
 
 ## Project Structure
 
 ```
 readreact/
-├── CMakeLists.txt           # Build configuration
-├── prj.conf                 # Zephyr configuration
-├── boards/                  # Board-specific configurations
-│   └── native_sim.overlay   # Device tree overlay
-├── src/
-│   ├── main.cpp             # Main application
-│   ├── readclass.cpp        # GPIO input handling
-│   ├── reactclass.cpp       # GPIO output control
-│   ├── reactled.cpp         # LED abstraction
-│   └── zbusmanager.cpp      # ZBus messaging implementation
+├── CMakeLists.txt           # Main build configuration
 ├── include/
-│   └── readreact/           # Header files
-│       ├── gpio_observer.hpp # ZBus interface definitions
-│       ├── readclass.h       # Input handling class
-│       ├── reactclass.h      # Output control class
-│       ├── reactled.h        # LED interface
-│       └── zbusmanager.h     # ZBus management
+│   └── readreact/           # Public headers
+│       ├── gpio_device.h    # GPIO configuration defines
+│       ├── readclass.h      # Input handling class
+│       ├── reactclass.h     # Output control class
+│       ├── reactled.h       # LED interface
+│       └── zbusmanager.h    # ZBus management
+├── src/
+│   ├── CMakeLists.txt       # Source build configuration
+│   ├── main.cpp             # Application entry point
+│   ├── readclass.cpp        # Input handling implementation
+│   ├── reactclass.cpp       # Output control implementation
+│   ├── reactled.cpp         # LED implementation
+│   └── zbusmanager.cpp      # ZBus implementation
 ├── tests/
 │   ├── CMakeLists.txt       # Test build configuration
-│   ├── mocks/               # Hardware mocks
-│   │   ├── reactled_mock.h  # LED control mock
-│   │   └── zbus_mocks.h     # ZBus mocks
+│   ├── mocks/               # Mock implementations
+│   │   └── reactled_mock.cpp# LED mock for testing
 │   ├── test_main.cpp        # Test entry point
 │   ├── test_readclass.cpp   # ReadClass tests
 │   ├── test_reactclass.cpp  # ReactClass tests
 │   └── test_zbusmanager.cpp # ZBus manager tests
-└── .github/workflows/
-    └── zephyr-ci.yml        # CI pipeline
+└── boards/
+    └── native_sim_64.overlay# Emulation configuration
 ```
-
-## Class Architecture
-
-### ZBusManager
-
-Central messaging system that:
-- Manages publisher/subscriber registration
-- Handles message routing between components
-- Interfaces with Zephyr's ZBus framework
-
-### ReadClass
-
-Input monitoring component that:
-- Configures GPIO pins as inputs with pull-up
-- Implements debounce logic (50ms default)
-- Publishes state changes via ZBusManager
-
-### ReactClass
-
-Output control component that:
-- Subscribes to state change messages
-- Controls LED behavior based on state
-- Implements timing logic for different patterns
-
-### ReactLED
-
-Hardware abstraction layer that:
-- Provides a clean interface for LED control
-- Enables mocking for testing
-
-## Testing
-
-To run the unit tests:
-
-```bash
-west build -b native_sim -- -DBUILD_TESTING=ON
-west build -t run
-```
-
-The test suite includes:
-- ZBusManager tests for message routing
-- ReactClass tests for LED pattern generation
-- ReadClass tests for debounce and state detection
-
-## Behavior
-
-### Input (ReadClass)
-- Monitors GPIO pin configured as input with pull-up
-- Implements 50ms debounce logic
-- Publishes state changes via ZBus
-  - `true` when pin goes HIGH
-  - `false` when pin goes LOW
-
-### Output (ReactClass)
-- Listens for state changes on ZBus
-- For HIGH state:
-  - Blinks connected LED 3 times (100ms interval)
-- For LOW state:
-  - Turns LED on for 500ms
 
 ## License
 
-MIT License - see LICENSE for details.
+MIT License - see LICENSE for details
