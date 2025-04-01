@@ -21,6 +21,7 @@ ZBusManager::~ZBusManager() {
 }
 
 void ZBusManager::register_publisher(BasePublisher *publisher) {
+    publisher->init();
     publishers_.push_back(publisher);
     publisher->set_publish_callback([this](const ZBusMessage &message) {
         this->publish(message);

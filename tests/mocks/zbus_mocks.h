@@ -7,3 +7,8 @@ class MockSubscriber : public BaseSubscriber {
 public:
     MOCK_METHOD(void, handle_message, (const ZBusMessage &message), (override));
 };
+
+class MockPublisher : public BasePublisher {
+public:
+    MOCK_METHOD(bool, init, (), (override));
+};

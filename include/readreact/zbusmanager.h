@@ -27,6 +27,8 @@ protected:
 public:
     virtual ~BasePublisher() = default;
 
+    virtual bool init() = 0;
+
     void set_publish_callback(std::function<void(const ZBusMessage &)> callback) {
         publish_callback = callback;
     }

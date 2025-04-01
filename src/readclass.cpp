@@ -1,6 +1,9 @@
 #include "readreact/readclass.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys_clock.h>
+#include "gmock/gmock.h"
+#include "zephyr/drivers/gpio.h"
 
 LOG_MODULE_REGISTER(read, LOG_LEVEL_DBG);
 
@@ -9,64 +12,75 @@ LOG_MODULE_REGISTER(read, LOG_LEVEL_DBG);
 #define PIN_IN_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), in_gpios)
 
 ReadClass::ReadClass() {
-    init();
-}
-
-void ReadClass::init() {
     callback_context_.read_ = this;
     work_context_.read_ = this;
 
-    const device *gpio_dev = DEVICE_DT_GET(DEV_IN);
+    k_work_init_delayable(&work_context_.work_, work_callback);
+}
 
-    if (!device_is_ready(gpio_dev)) {
+ReadClass::~ReadClass() {
+    k_work_cancel_delayable(&work_context_.work_);
+    gpio_remove_callback(gpio_dev_, &callback_context_.callback_);
+}
+
+bool ReadClass::init_gpio_device() {
+    if (!device_is_ready(gpio_dev_)) {
         LOG_ERR("Input GPIO device not ready");
-        return;
+        return false;
     }
 
-    int ret = gpio_pin_configure(gpio_dev, PIN_IN, PIN_IN_FLAGS);
+    int ret = gpio_pin_configure(gpio_dev_, pin_, flags_);
     if (ret < 0) {
         LOG_ERR("Failed to configure input GPIO: %d", ret);
-        return;
+        return false;
     }
 
-    ret = gpio_pin_interrupt_configure(gpio_dev, PIN_IN, GPIO_INT_EDGE_TO_ACTIVE);
+    ret = gpio_pin_interrupt_configure(gpio_dev_, pin_, GPIO_INT_EDGE_BOTH);
     if (ret < 0) {
         LOG_ERR("Failed to configure interrupt: %d", ret);
-        return;
+        return false;
     }
 
-    k_work_init(&work_context_.work_, work_callback);
-    gpio_init_callback(&callback_context_.callback_, interrupt_callback, BIT(PIN_IN));
+    gpio_init_callback(&callback_context_.callback_, interrupt_callback, BIT(pin_));
 
-    ret = gpio_add_callback(gpio_dev, &callback_context_.callback_);
+    ret = gpio_add_callback(gpio_dev_, &callback_context_.callback_);
     if (ret < 0) {
         LOG_ERR("Failed to add callback: %d", ret);
-        return;
+        return false;
     }
 
-    LOG_INF("ReadClass initialized for input pin");
+    return true;
+}
+
+bool ReadClass::init() {
+    gpio_dev_ = DEVICE_DT_GET(DEV_IN);
+    pin_ = PIN_IN;
+    flags_ = PIN_IN_FLAGS;
+
+    bool ret = init_gpio_device();
+
+    LOG_INF("ReadClass initialized for input pin %d", ret);
+    
+    return ret;
 }
 
 void ReadClass::interrupt_callback(const device *dev, gpio_callback *cb, uint32_t pins) {
     CallbackContext *ctx = CONTAINER_OF(cb, CallbackContext, callback_);
-    ctx->read_->work_context_.dev = dev;
-    k_work_submit(&ctx->read_->work_context_.work_);
+    k_work_schedule(&ctx->read_->work_context_.work_, K_NO_WAIT);
 }
 
 void ReadClass::work_callback(struct k_work *work) {
-    WorkContext *ctx = CONTAINER_OF(work, WorkContext, work_);
-    ctx->read_->process_gpio_change(ctx->dev);
+    k_work_delayable *dwork = k_work_delayable_from_work(work);
+    WorkContext *ctx = CONTAINER_OF(dwork, WorkContext, work_);
+    ctx->read_->process_gpio_change();
 }
 
-void ReadClass::process_gpio_change(const device *dev) {
-    LOG_DBG("process_gpio_change");
-    int state = gpio_pin_get(dev, PIN_IN);
-
-    if (k_uptime_get() - last_change_time_ < DEBOUNCE_TIME_MS) {
-        return;
-    }
-
-    if (state != last_state_) {
+void ReadClass::process_gpio_change() {
+    int state = gpio_pin_get(gpio_dev_, pin_);
+    int64_t time = k_uptime_get() - last_change_time_;
+    LOG_INF("process_gpio_change state: %d %d", state, time);
+    
+    if (time > DEBOUNCE_TIME_MS && state != last_state_) {
         last_state_ = state;
         last_change_time_ = k_uptime_get();
 

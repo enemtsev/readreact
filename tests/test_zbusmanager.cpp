@@ -17,12 +17,9 @@ ZBUS_CHAN_DEFINE(test_chan, struct ZBusMessage, NULL, &testmanager_ptr, ZBUS_OBS
 // Test class for ZBusManager
 class ZBusManagerTest : public ::testing::Test {
 protected:
-    BasePublisher publisher_;  // BasePublisher instance
-
     void SetUp() override {
         testmanager_ptr = new ZBusManager();
         testmanager_ptr->set_channel(&test_chan);
-        testmanager_ptr->register_publisher(&publisher_);
     }
 
     void TearDown() override {
@@ -32,6 +29,10 @@ protected:
 
 // Test: Verify that the subscriber is triggered when a message is published
 TEST_F(ZBusManagerTest, TestPublishMessage) {
+    MockPublisher publisher_;
+    EXPECT_CALL(publisher_, init()).Times(1);
+    testmanager_ptr->register_publisher(&publisher_);
+
     MockSubscriber subscriber;
     testmanager_ptr->register_subscriber(&subscriber);
 
@@ -48,6 +49,10 @@ TEST_F(ZBusManagerTest, TestPublishMessage) {
 
 // Test: Verify that multiple subscribers receive the message
 TEST_F(ZBusManagerTest, TestMultipleSubscribers) {
+    MockPublisher publisher_;
+    EXPECT_CALL(publisher_, init()).Times(1);
+    testmanager_ptr->register_publisher(&publisher_);
+
     MockSubscriber subscriber;
     testmanager_ptr->register_subscriber(&subscriber);
 
@@ -70,6 +75,10 @@ TEST_F(ZBusManagerTest, TestMultipleSubscribers) {
 
 // Test: Verify that no crash when no subscribers are set
 TEST_F(ZBusManagerTest, TestNoPublishCallback) {
+    MockPublisher publisher_;
+    EXPECT_CALL(publisher_, init()).Times(1);
+    testmanager_ptr->register_publisher(&publisher_);
+
     // Prepare a message
     ZBusMessage test_message{true};  // State set to HIGH
 

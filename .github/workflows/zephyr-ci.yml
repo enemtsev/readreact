@@ -73,4 +73,4 @@ jobs:
         cd ~/zephyrproject
         west zephyr-export
         west build -p always -b native_sim/native/64 $GITHUB_WORKSPACE -- -DTEST_BUILD=ON -DGOOGLETEST_LIB_DIR=/home/runner/googletest-1.13.0/build/lib/
-        ~/zephyrproject/build/zephyr/zephyr.exe
+        ~/zephyrproject/build/zephyr/zephyr.exe --rt
